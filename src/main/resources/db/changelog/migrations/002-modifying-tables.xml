@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+    <changeSet  author="vshvedko"  id="002-1">
+        <insert tableName="file_storage">
+            <column name="filename">myfile1.txt</column>
+            <column name="hash">hash-myfile1.txt</column>
+            <column name="created">now()</column>
+            <column name="file">binary-myfile1.txt</column>
+        </insert>
+        <insert tableName="file_storage">
+            <column name="filename">myfile2.csv</column>
+            <column name="hash">hash-myfile2.csv</column>
+            <column name="created">now()</column>
+            <column name="file">binary-myfile2.csv</column>
+        </insert>
+        <insert tableName="file_storage">
+            <column name="filename">myfile3.md</column>
+            <column name="hash">hash-myfile3.md</column>
+            <column name="created">now()</column>
+            <column name="file">binary-myfile3.md</column>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

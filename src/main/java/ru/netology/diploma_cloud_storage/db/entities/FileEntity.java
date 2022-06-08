@@ -9,7 +9,8 @@ import javax.persistence.*;
 import java.util.Date;
 import java.util.Objects;
 
-@Entity(name = "file_storage")
+@Entity
+@Table(name = "file_storage")
 @Getter
 @Setter
 @ToString

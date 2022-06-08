@@ -14,7 +14,7 @@ public interface CloudRepository extends JpaRepository<FileEntity, String> {
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRED)
-    @Query("UPDATE " + FileEntity.DB_NAME + " f " +
+    @Query("UPDATE FileEntity f " +
             "SET f.filename = :new_name, f.updated = current_timestamp " +
             "WHERE f.filename = :old_name")
     void renameFile(@Param("old_name") String oldFilename, @Param("new_name") String newFilename);

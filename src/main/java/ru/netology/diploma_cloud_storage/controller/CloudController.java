@@ -11,10 +11,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.diploma_cloud_storage.db.entities.FileEntity;
+import ru.netology.diploma_cloud_storage.domain.FileSize;
 import ru.netology.diploma_cloud_storage.domain.Name;
 import ru.netology.diploma_cloud_storage.service.CloudService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -93,16 +93,13 @@ public class CloudController {
         service.renameFile(filename, name.getName());
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)    //TODO: fix it
+    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<FileEntity> listGet(@RequestHeader(name = "auth-token") String authToken,
-                                    @RequestParam int limit) {
+    public List<FileSize> getFileList(@RequestHeader(name = "auth-token") String authToken,
+                                      @RequestParam int limit) {
         final String answer = String.format("list -> %s %d", authToken, limit);
         System.out.println(answer);
-        List<FileEntity> list = new ArrayList<>();
-        for (int i = 0; i < limit; i++)
-            list.add(new FileEntity("filename" + i, "hash", "file"));
-        return list;
+        return service.getFileList(limit);
     }
 
     @Data

@@ -1,13 +1,18 @@
 package ru.netology.diploma_cloud_storage.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.diploma_cloud_storage.db.entities.FileEntity;
 import ru.netology.diploma_cloud_storage.domain.CloudFile;
+import ru.netology.diploma_cloud_storage.domain.FileSize;
 import ru.netology.diploma_cloud_storage.exception.ErrorDeleteFileException;
+import ru.netology.diploma_cloud_storage.exception.ErrorGettingListException;
 import ru.netology.diploma_cloud_storage.exception.ErrorInputDataException;
 import ru.netology.diploma_cloud_storage.repository.CloudRepository;
 
@@ -71,11 +76,24 @@ public class CloudService {
                 && !repository.existsById(newFilename)) {
             repository.renameFile(oldFilename, newFilename);
         } else if (oldFilename.equals(newFilename)) {
-            throw new ErrorInputDataException(oldFilename, "input filenames are equeal");
+            throw new ErrorInputDataException(oldFilename, "input filenames are equal");
         } else if (!repository.existsById(oldFilename)) {
             throw new ErrorInputDataException(oldFilename, "file with such filename is not exist");
         } else
             throw new ErrorInputDataException(oldFilename, "file '" + newFilename + "' is already exist");
+    }
+
+    public List<FileSize> getFileList(int limit) {
+        if (repository.count() >= limit) {
+            final Sort sort = Sort.by(Sort.Direction.DESC, "created");
+//            final List<FileEntity> list = repository.findAll(sort);
+            return repository.findAll(PageRequest.of(0, limit, sort))
+                    .stream()
+                    .map(x -> new FileSize(
+                            x.getFilename(),
+                            x.getFile().replace(" ", "").length() / 8))
+                    .collect(Collectors.toList());
+        } else throw new ErrorGettingListException(String.valueOf(limit));
     }
 
     public void renameFile2(String filename, String newName) {

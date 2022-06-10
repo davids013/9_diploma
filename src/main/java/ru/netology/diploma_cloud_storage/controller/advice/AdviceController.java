@@ -1,5 +1,6 @@
 package ru.netology.diploma_cloud_storage.controller.advice;
 
+import javax.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -37,6 +38,13 @@ public class AdviceController {
     public ErrorMessage errorInputDataExceptionHandler(ErrorInputDataException e) {
         final int id = -4;    //TODO: fix id generating
         return buildErrorMessage(e, id);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage validationExceptionHandler(ValidationException e) {
+        final int id = -5;    //TODO: fix id generating
+        return buildErrorMessage(new ErrorInputDataException("input", e.getMessage()), id);
     }
 
 //    @ExceptionHandler(ErrorUploadFileException.class)

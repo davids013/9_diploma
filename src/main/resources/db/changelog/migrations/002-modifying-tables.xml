@@ -8,19 +8,19 @@
             <column name="filename">myfile1.txt</column>
             <column name="hash">hash-myfile1.txt</column>
             <column name="created">now()</column>
-            <column name="file">binary-myfile1.txt</column>
+            <column name="file">00000001</column>
         </insert>
         <insert tableName="file_storage">
             <column name="filename">myfile2.csv</column>
             <column name="hash">hash-myfile2.csv</column>
             <column name="created">now()</column>
-            <column name="file">binary-myfile2.csv</column>
+            <column name="file">00000010</column>
         </insert>
         <insert tableName="file_storage">
             <column name="filename">myfile3.md</column>
             <column name="hash">hash-myfile3.md</column>
             <column name="created">now()</column>
-            <column name="file">binary-myfile3.md</column>
+            <column name="file">00000011</column>
         </insert>
     </changeSet>
 </databaseChangeLog>

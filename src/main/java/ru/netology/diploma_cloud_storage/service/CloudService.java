@@ -31,24 +31,14 @@ public class CloudService {
         this.repository = repository;
     }
 
-    public FileEntity test(String filename, String file) {
-        return repository.save(new FileEntity(filename, "testHash", file));
-    }
-
     public void deleteFile(String filename) {
         if (repository.existsById(filename)) {
             repository.deleteById(filename);
         } else throw new ErrorDeleteFileException(filename);
     }
 
-    public void uploadFile(String filename, String hash, MultipartFile multipartFile) {
+    public void uploadFile(String filename, String hash, String binaryFile) {
         if (!repository.existsById(filename)) {
-            String binaryFile = "";
-            try {
-                binaryFile = byteArrayToBinaryString(multipartFile.getBytes());
-            } catch (IOException e) {
-                throw new ErrorInputDataException(filename);
-            }
             final FileEntity entity = new FileEntity(filename, hash, binaryFile);
             repository.save(entity);
         } else
@@ -58,9 +48,7 @@ public class CloudService {
     public MultiValueMap<String, String> downloadFile(String filename) {
         if (repository.existsById(filename)) {
             final FileEntity entity = repository.getById(filename);
-            byte[] bytes = binaryStringToByteArray(entity.getFile());
-            final String resultFile = Arrays.toString(bytes);
-            final CloudFile cf = new CloudFile(entity.getHash(), resultFile);
+            final CloudFile cf = new CloudFile(entity.getHash(), entity.getFile());
             final MultiValueMap<String, String> mvm = new LinkedMultiValueMap<>();
             mvm.add("hash", cf.getHash());
             mvm.add("file", cf.getFile());

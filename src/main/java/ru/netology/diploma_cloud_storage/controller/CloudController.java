@@ -3,7 +3,7 @@ package ru.netology.diploma_cloud_storage.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -35,10 +35,16 @@ public class CloudController {
         this.service = service;
     }
 
+    @GetMapping("test")
+    public String test() {
+        return "Hello, admin!";
+    }
+
     @PostMapping("login")   //TODO: fix it
     @ResponseStatus(HttpStatus.OK)
     public AuthToken login(@RequestBody @Valid User user) {
-        final String answer = String.format("/login -> %s %s", user.getLogin(), user.getPassword());
+        final Object obj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final String answer = String.format("/login -> %s %s", user, obj);
         System.out.println(answer);
         return new AuthToken(user.getLogin());
     }

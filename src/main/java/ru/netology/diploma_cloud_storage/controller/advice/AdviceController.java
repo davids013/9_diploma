@@ -2,6 +2,7 @@ package ru.netology.diploma_cloud_storage.controller.advice;
 
 import javax.validation.ValidationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -40,11 +41,34 @@ public class AdviceController {
         return buildErrorMessage(e, id);
     }
 
+    @ExceptionHandler(ErrorGettingListException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage errorInputDataExceptionHandler(ErrorGettingListException e) {
+        final int id = -5;    //TODO: fix id generating
+        return buildErrorMessage(e, id);
+    }
+
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorMessage validationExceptionHandler(ValidationException e) {
-        final int id = -5;    //TODO: fix id generating
+        final int id = -6;    //TODO: fix id generating
+        e.printStackTrace();
         return buildErrorMessage(new ErrorInputDataException("input", e.getMessage()), id);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
+        final int id = -7;    //TODO: fix id generating
+        e.printStackTrace();
+        final String target = "default message";
+        String mes = e.getMessage();
+        mes = (!mes.contains(target))
+                ? mes
+                : mes
+                    .substring(mes.lastIndexOf(target) + target.length() + 2, mes.length() - 3)
+                    .replace("\"", "'");
+        return buildErrorMessage(new ErrorInputDataException("input", "filename " + mes), id);
     }
 
 //    @ExceptionHandler(ErrorUploadFileException.class)

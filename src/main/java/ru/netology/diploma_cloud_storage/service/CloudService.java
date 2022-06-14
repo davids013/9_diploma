@@ -81,7 +81,7 @@ public class CloudService {
                             x.getFilename(),
                             x.getFile().replace(" ", "").length() / 8))
                     .collect(Collectors.toList());
-        } else throw new ErrorGettingListException(String.valueOf(limit));
+        } else throw new ErrorGettingListException("fileList", "files in storage are lesser than " + limit);
     }
 
     public void renameFile2(String filename, String newName) {

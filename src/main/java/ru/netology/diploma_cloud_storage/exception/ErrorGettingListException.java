@@ -11,4 +11,8 @@ public class ErrorGettingListException extends CloudStorageException {
     public ErrorGettingListException(String target) {
         super(ISSUE, target);
     }
+
+    public ErrorGettingListException(String target, String description) {
+        super(ISSUE + " (" + description + ")", target);
+    }
 }

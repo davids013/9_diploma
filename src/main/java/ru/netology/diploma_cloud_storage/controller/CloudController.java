@@ -7,10 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.netology.diploma_cloud_storage.domain.AuthToken;
-import ru.netology.diploma_cloud_storage.domain.FileSize;
-import ru.netology.diploma_cloud_storage.domain.Filename;
-import ru.netology.diploma_cloud_storage.domain.User;
+import ru.netology.diploma_cloud_storage.domain.*;
 import ru.netology.diploma_cloud_storage.service.CloudService;
 
 import javax.validation.Valid;
@@ -33,6 +30,11 @@ public class CloudController {
     @Autowired
     public CloudController(CloudService service) {
         this.service = service;
+    }
+
+    @GetMapping("test")
+    public String test() {
+        return "Hello from test";
     }
 
     @PostMapping("login")   //TODO: fix it
@@ -80,14 +82,14 @@ public class CloudController {
         return service.downloadFile(filename.getFilename());
     }
 
-    @PutMapping("file")
+    @PutMapping(value = "file", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void renameFile(@RequestHeader(name = "auth-token") @Valid AuthToken authToken,
                            @RequestParam @Valid Filename filename,
-                           @RequestBody @Valid @Pattern(regexp = "[()А-я\\w\\s\\.,-]+") String name) {
-        final String answer = String.format("filePut -> %s %s %s", authToken.getAuthToken(), filename.getFilename(), name);
+                           @RequestBody @Valid Name name) {
+        final String answer = String.format("filePut -> %s %s %s", authToken.getAuthToken(), filename.getFilename(), name.getName());
         System.out.println(answer);
-        service.renameFile(filename.getFilename(), name);
+        service.renameFile(filename.getFilename(), name.getName());
     }
 
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -1,77 +1,65 @@
 package ru.netology.diploma_cloud_storage.configuration;
 
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-//import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-//import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-//import org.springframework.web.cors.CorsConfiguration;
-//import org.springframework.web.cors.CorsConfigurationSource;
-//import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import ru.netology.diploma_cloud_storage.controller.advice.AdviceController;
+import ru.netology.diploma_cloud_storage.service.AuthService;
 
-import java.util.Arrays;
+@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class SecurityConfig extends WebSecurityConfigurerAdapter{
+    @Autowired
+    private JwtRequestFilter jwtRequestFilter;
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private AuthenticationEntryPoint authEntryPoint;
 
-//@Configuration
-//@EnableWebSecurity
-//@EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfig
-//        extends WebSecurityConfigurerAdapter
-{
-//    @Autowired
-//    private DataSource dataSource;
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(authService).passwordEncoder(passwordEncoder());
+    }
 
-//    @Bean
-//    public PasswordEncoder encoder() {
-//        return NoOpPasswordEncoder.getInstance();
-//    }
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPointBean() {
+        return new AdviceController();
+    }
 
-//    private String encode(CharSequence rawPassword) {
-//        return PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(rawPassword);
-//    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-//    @Override
-//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-//        auth.inMemoryAuthentication()
-//                .withUser("admin").password(encode("iddqd")).roles("ADMIN").and()
-//                .withUser("verified").password(encode("0000")).roles("VERIFIED").and()
-//                .withUser("user").password(encode("0000")).roles("USER").and()
-//                .withUser("guest").password("{noop}0000").roles("USER").accountLocked(true).and()
-//                .withUser("reader").password(encode("0000")).roles("READ").and()
-//                .withUser("writer").password(encode("0000")).roles("WRITE").and()
-//                .withUser("deleter").password(encode("0000")).roles("DELETE");
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
 
-//        auth.jdbcAuthentication().dataSource(dataSource)
-//                .usersByUsernameQuery("SELECT name, surname, 'true' FROM persons WHERE name=?")
-//                .authoritiesByUsernameQuery("SELECT name, phone_number FROM persons WHERE name=?");
-//    }
-
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http
-//                .csrf();
-//                .formLogin()
-//                .and().authorizeRequests().antMatchers("/cloud/test**").permitAll()
-//                .and().authorizeRequests().antMatchers("/cloud/login**").permitAll()
-//                .and().authorizeRequests().antMatchers("/cloud/file**").hasRole("ADMIN")
-//                .and().authorizeRequests().antMatchers("/cloud/list**").hasAnyRole("VERIFIED", "ADMIN")
-//                .and().authorizeRequests().anyRequest().authenticated();
-//                .and()
-//                .cors();
-//                .and()
-//                .authorizeRequests().anyRequest().permitAll();
-//    }
-
-//    @Bean
-//    CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowedOrigins(Arrays.asList("https://localhost:8080"));
-//        configuration.setAllowedMethods(Arrays.asList("GET","POST"));
-//        configuration.setAllowCredentials(true);
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", configuration);
-//        return source;
-//    }
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .csrf().disable()
+                .authorizeRequests().antMatchers("/cloud/login").permitAll()
+                .anyRequest().authenticated().and()
+                .exceptionHandling().authenticationEntryPoint(authEntryPoint).and()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout()
+//                    .logoutUrl("/cloud/logout")
+                    .logoutSuccessUrl("/cloud/login");
+    }
 }

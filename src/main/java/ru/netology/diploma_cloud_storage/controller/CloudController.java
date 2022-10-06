@@ -3,11 +3,13 @@ package ru.netology.diploma_cloud_storage.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.netology.diploma_cloud_storage.domain.*;
+import ru.netology.diploma_cloud_storage.domain.AuthToken;
+import ru.netology.diploma_cloud_storage.domain.FileSize;
+import ru.netology.diploma_cloud_storage.domain.Filename;
+import ru.netology.diploma_cloud_storage.domain.Name;
 import ru.netology.diploma_cloud_storage.service.CloudService;
 
 import javax.validation.Valid;
@@ -20,10 +22,10 @@ import java.util.List;
 @Validated
 @RequestMapping("/cloud/")
 @CrossOrigin
-        (origins = "http://localhost:8080",
-                methods = RequestMethod.POST,
-                allowedHeaders = "content-type",
-                allowCredentials = "true")
+//        (origins = "http://localhost:8080",
+//                methods = RequestMethod.POST,
+//                allowedHeaders = "content-type",
+//                allowCredentials = "true")
 public class CloudController {
     private final CloudService service;
 
@@ -32,33 +34,13 @@ public class CloudController {
         this.service = service;
     }
 
-    @GetMapping("test")
-    public String test() {
-        return "Hello from test";
-    }
-
-    @PostMapping("login")   //TODO: fix it
-    @ResponseStatus(HttpStatus.OK)
-    public AuthToken login(@RequestBody @Valid User user) {
-        final String answer = String.format("/login -> %s %s", user.getLogin(), user.getPassword());
-        System.out.println(answer);
-        return new AuthToken(user.getLogin());
-    }
-
-    @PostMapping("logout")  //TODO: fix it
-    @ResponseStatus(HttpStatus.OK)
-    public void logout(@RequestHeader(name = "auth-token") @Valid AuthToken authToken) {
-        final String answer = String.format("/logout -> %s", authToken.getAuthToken());
-        System.out.println(answer);
-    }
-
     @PostMapping("file")
     @ResponseStatus(HttpStatus.OK)
     public void uploadFile(@RequestHeader(name = "auth-token") @Valid AuthToken authToken,
                            @RequestParam @Valid Filename filename,
                            @RequestPart @Valid @Pattern(regexp = "[A-z\\d]+") String hash,
                            @RequestPart @Valid @Pattern(regexp = "[01\\s]+") String file) {
-        final String answer = String.format("filePost -> %s %s %s", authToken.getAuthToken(), filename.getFilename(), hash);
+        final String answer = String.format("-----> POST   /file \t-> Adding file '%s' by '%s'", filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
         service.uploadFile(filename.getFilename(), hash, file);
     }
@@ -67,7 +49,8 @@ public class CloudController {
     @ResponseStatus(HttpStatus.OK)
     public void deleteFile(@RequestHeader(name = "auth-token") @Valid AuthToken authToken,
                            @RequestParam @Valid Filename filename) {
-        final String answer = String.format("fileDelete -> %s %s", authToken.getAuthToken(), filename.getFilename());
+        final String answer = String.format("-----> DELETE /file \t-> Deleting file '%s' by '%s'",
+                filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
         service.deleteFile(filename.getFilename());
     }
@@ -77,7 +60,8 @@ public class CloudController {
     public MultiValueMap<String, String> downloadFile(
             @RequestHeader(name = "auth-token") @Valid AuthToken authToken,
             @RequestParam @Valid Filename filename) {
-        final String answer = String.format("fileGet -> %s %s", authToken.getAuthToken(), filename.getFilename());
+        final String answer = String.format("-----> GET    /file \t-> Getting file '%s' by '%s'",
+                filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
         return service.downloadFile(filename.getFilename());
     }
@@ -87,7 +71,8 @@ public class CloudController {
     public void renameFile(@RequestHeader(name = "auth-token") @Valid AuthToken authToken,
                            @RequestParam @Valid Filename filename,
                            @RequestBody @Valid Name name) {
-        final String answer = String.format("filePut -> %s %s %s", authToken.getAuthToken(), filename.getFilename(), name.getName());
+        final String answer = String.format("-----> PUT    /file \t-> Renaming file '%s' to '%s' by '%s'",
+                filename.getFilename(), name.getName(), authToken.getAuthToken());
         System.out.println(answer);
         service.renameFile(filename.getFilename(), name.getName());
     }
@@ -96,7 +81,8 @@ public class CloudController {
     @ResponseStatus(HttpStatus.OK)
     public List<FileSize> getFileList(@RequestHeader(name = "auth-token") @Valid AuthToken authToken,
                                       @RequestParam @Valid @Positive int limit) {
-        final String answer = String.format("list -> %s %d", authToken.getAuthToken(), limit);
+        final String answer = String.format("-----> GET    /list \t-> Getting %d file list by '%s'",
+                limit, authToken.getAuthToken());
         System.out.println(answer);
         return service.getFileList(limit);
     }

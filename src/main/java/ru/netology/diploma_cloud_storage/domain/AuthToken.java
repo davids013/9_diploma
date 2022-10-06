@@ -13,7 +13,7 @@ import javax.validation.constraints.Pattern;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthToken {
-    @Length(min = 1, max = 64)
-    @Pattern(regexp = "[\\w-]+")
+    @Length(min = 1, max = 256)
+    @Pattern(regexp = "[\\w\\d\\s-.]+")
     private String authToken;
 }

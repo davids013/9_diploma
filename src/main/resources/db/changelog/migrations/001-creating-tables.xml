@@ -20,4 +20,17 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet  author="vshvedko"  id="001-2">
+        <createTable tableName="users">
+            <column name="login" type="varchar(64)">
+                <constraints primaryKey="true" nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+            <column name="registered" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>

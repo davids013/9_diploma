@@ -11,4 +11,8 @@ public class UnauthorizedErrorException extends CloudStorageException {
     public UnauthorizedErrorException(String target) {
         super(ISSUE, target);
     }
+
+    public UnauthorizedErrorException(String target, String description) {
+        super(ISSUE + " (" + description + ")", target);
+    }
 }

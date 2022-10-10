@@ -32,10 +32,10 @@ public class AuthService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         final UserEntity user = userRepository.findByLogin(username);
         if (user == null) {
-            throw new UsernameNotFoundException("User not found with username: " + username);
+            throw new UnauthorizedErrorException("Authentication",
+                    "User '" + username + "' not found");
         }
-        return new User(user.getLogin(), user.getPassword(),
-                new ArrayList<>());
+        return new User(user.getLogin(), user.getPassword(), new ArrayList<>());
     }
 
     public AuthToken createAuthToken(String login, String password) {

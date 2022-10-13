@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import ru.netology.diploma_cloud_storage.db.entities.UserEntity;
 
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity, Integer> {
+public interface UserRepository extends JpaRepository<UserEntity, String> {
     boolean existsByLogin(String login);
     UserEntity findByLogin(String login);
 }

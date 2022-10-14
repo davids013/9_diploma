@@ -17,19 +17,20 @@ import ru.netology.diploma_cloud_storage.repository.UserRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationTests {
 
-    private static final String TEST_INIT_FILENAME = "filename.test";
-    private static final String TEST_NEW_FILENAME = "newName.test";
-    private static final String TEST_USERNAME = "test_username";
-    private static final int PORT = 8081;
-    private static String rootPath;
-    private static String token;
-    private static int counter;
+    static final String TEST_INIT_FILENAME = "filename.test";
+    static final String TEST_NEW_FILENAME = "newName.test";
+    static final String TEST_USERNAME = "test_username";
+    static final int PORT = 8081;
+    static String rootPath;
+    static String token;
+    static int counter;
     private long time;
 
     @Autowired
@@ -46,120 +47,253 @@ class ApplicationTests {
         System.out.println("START CONTAINER");
         container.start();
         rootPath = "http://localhost:" + container.getMappedPort(PORT) + "/cloud";
-        System.out.println("START TESTS");
+        System.out.println("CONTAINER STARTED");
     }
 
     @BeforeEach
     public void beforeEach() {
-        System.out.println("TEST #" + (++counter) + " at " + new Date());
+        System.out.println("\tTEST #" + (++counter) + " at " + new Date());
         time = System.currentTimeMillis();
     }
 
     @AfterEach
     public void afterEach() {
         time = System.currentTimeMillis() - time;
-        System.out.println("Test completed with " + time/1000d + " seconds");
+        System.out.println("\tTest completed with " + time/1000d + " seconds");
     }
 
     @Test
     @Order(1)
     void loginTest() {
-        final User user = new User(TEST_USERNAME, TEST_USERNAME.toUpperCase());
-        final String endpoint = "/login";
-        final boolean isResponseMustBeNull = false;
         configureRequestFactory();
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        final HttpEntity<User> httpEntity = new HttpEntity<>(user, headers);
-        final AuthToken body =
-                getResponseBody(HttpMethod.POST, endpoint, httpEntity, isResponseMustBeNull, AuthToken.class);
-        token = body.getAuthToken();
-        System.out.println("New auth-token: " + token);
+        login(TEST_USERNAME, HttpStatus.OK.value());
     }
 
     @Test
     @Order(2)
-    void fileWriteTest() {
-        final String endpoint = "/file?filename=" + TEST_INIT_FILENAME;
-        final boolean isResponseMustBeNull = true;
-        final String fileHash = "fileHASH";
-        final String fileData = "10000001";
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.add("auth-token", token);
-        final MultiValueMap<String, String> request = new LinkedMultiValueMap<>();
-        request.add("hash", fileHash);
-        request.add("file", fileData);
-        final HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(request, headers);
-        getResponseBody(HttpMethod.POST, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class);
+    void fileUploadTest() {
+        fileUpload("10000001", true, true, HttpStatus.OK.value());
     }
 
     @Test
     @Order(3)
-    void fileReadTest() {
-        final String endpoint = "/file?filename=" + TEST_INIT_FILENAME;
-        final boolean isResponseMustBeNull = false;
-        final HttpHeaders headers = new HttpHeaders();
-        headers.add("auth-token", token);
-        final HttpEntity<MultiValueMap<String, String>> httpEntity =
-                new HttpEntity<>(null, headers);
-        final String body =
-                getResponseBody(HttpMethod.GET, endpoint, httpEntity, isResponseMustBeNull, String.class);
-        Assertions.assertTrue(body.contains("hash") && body.contains("file"));
+    void fileDownloadTest() {
+        fileDownload(TEST_INIT_FILENAME, true, HttpStatus.OK.value());
     }
 
     @Test
     @Order(4)
     void fileRenameTest() {
-        final String endpoint = "/file?filename=" + TEST_INIT_FILENAME;
-        final boolean isResponseMustBeNull = true;
-        final Name name = new Name(TEST_NEW_FILENAME);
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("auth-token", token);
-        final HttpEntity<Name> httpEntity = new HttpEntity<>(name, headers);
-        getResponseBody(HttpMethod.PUT, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class);
+        fileRename(TEST_INIT_FILENAME, TEST_NEW_FILENAME, true, true, HttpStatus.OK.value());
     }
 
     @Test
     @Order(5)
     void getListTest() {
-        final int listSize = 3;
-        final String endpoint = "/list?limit=" + listSize;
-        final boolean isResponseMustBeNull = false;
-        final HttpHeaders headers = new HttpHeaders();
-        headers.add("auth-token", token);
-        final HttpEntity<Name> httpEntity = new HttpEntity<>(null, headers);
-        final ParameterizedTypeReference<List<FileSize>> ptr = new ParameterizedTypeReference<List<FileSize>>() {};
-        final List<FileSize> body =
-                getResponseBody(HttpMethod.GET, endpoint, httpEntity, isResponseMustBeNull, ptr);
-        Assertions.assertEquals(body.size(), listSize);
-        Assertions.assertTrue(body.toString().contains("size") &&
-                body.toString().contains(TEST_NEW_FILENAME) &&
-                !body.toString().contains(TEST_INIT_FILENAME));
+        getList(3, true, HttpStatus.OK.value());
     }
 
     @Test
     @Order(6)
     void fileDeleteTest() {
-        final String endpoint = "/file?filename=" + TEST_NEW_FILENAME;
-        final boolean isResponseMustBeNull = true;
-        final HttpHeaders headers = new HttpHeaders();
-        headers.add("auth-token", token);
-        final HttpEntity<String> httpEntity = new HttpEntity<>(null, headers);
-        getResponseBody(HttpMethod.DELETE, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class);
+        fileDelete(TEST_NEW_FILENAME, true, true, HttpStatus.OK.value());
     }
 
     @Test
     @Order(7)
     void logoutTest() {
-        final String endpoint = "/logout";
-        final boolean isResponseMustBeNull = true;
+        logout(true, true, HttpStatus.OK.value(), false);
+    }
+
+    @Test
+    @Order(8)
+    void loginErrorTest1() {
+        login(TEST_USERNAME.substring(0, 2), HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(9)
+    void fileUploadErrorTest1() {
+        fileUpload("10000002", false, false, HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    @Order(10)
+    void fileUploadErrorTest2() {
+        fileUpload("10000002", true, false, HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(11)
+    void fileDownloadErrorTest1() {
+        fileDownload(TEST_INIT_FILENAME, false, HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    @Order(12)
+    void fileDownloadErrorTest2() {
+        fileDownload(TEST_INIT_FILENAME.substring(2), true, HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(13)
+    void fileRenameErrorTest1() {
+        fileRename(TEST_INIT_FILENAME, TEST_NEW_FILENAME.substring(0, 2), false, false, HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    @Order(14)
+    void fileRenameErrorTest2() {
+        fileRename(TEST_INIT_FILENAME, "name/?!", true, false, HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(15)
+    void fileGetListError1() {
+        getList(3, false, HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    @Order(16)
+    void fileGetListError2() {
+        getList(-2, true, HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(17)
+    void fileGetListError3() {
+        getList(300, true, HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @Test
+    @Order(18)
+    void fileDeleteError1() {
+        fileDelete(TEST_INIT_FILENAME, false, false, HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    @Order(19)
+    void fileDeleteError2() {
+        fileDelete("?!/", true, false, HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @Order(20)
+    void fileDeleteError3() {
+        fileDelete(TEST_INIT_FILENAME, true, false, HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @Test
+    @Order(21)
+    void logoutErrorTest1() {
+        logout(false, false, HttpStatus.UNAUTHORIZED.value(), true);
+    }
+
+    private void login(String username, int status) {
+        final String endpoint = "/login";
+        final User user = new User(username, username.toUpperCase());
         final HttpHeaders headers = new HttpHeaders();
-        headers.add("auth-token", token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        final HttpEntity<User> httpEntity = new HttpEntity<>(user, headers);
+        if (status == HttpStatus.OK.value()) {
+            final AuthToken body =
+                    getResponseBody(HttpMethod.POST, endpoint, httpEntity, false, AuthToken.class, status);
+            token = body.getAuthToken();
+        } else
+            getResponseBody(HttpMethod.POST, endpoint, httpEntity, false, ErrorMessage.class, status);
+    }
+
+    private void fileUpload(String fileData,
+                            boolean isAuthorized,
+                            boolean isResponseMustBeNull,
+                            int status) {
+        final String endpoint = "/file?filename=" + TEST_INIT_FILENAME;
+        final String fileHash = String.valueOf(Objects.hash(fileData));
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        if (isAuthorized)
+            headers.add("auth-token", token);
+        final MultiValueMap<String, String> request = new LinkedMultiValueMap<>();
+        request.add("hash", fileHash);
+        request.add("file", fileData);
+        final HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(request, headers);
+        getResponseBody(HttpMethod.POST, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class, status);
+    }
+
+    private void fileDownload(String filename,
+                              boolean isAuthorized,
+                              int status) {
+        final String endpoint = "/file?filename=" + filename;
+        final boolean isResponseMustBeNull = false;
+        final HttpHeaders headers = new HttpHeaders();
+        if (isAuthorized)
+            headers.add("auth-token", token);
+        final HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(null, headers);
+        final String body =
+                getResponseBody(HttpMethod.GET, endpoint, httpEntity, isResponseMustBeNull, String.class, status);
+        if (status == HttpStatus.OK.value())
+            Assertions.assertTrue(body.contains("hash") && body.contains("file"));
+    }
+
+    private void fileRename(String filename,
+                            String newFilename,
+                            boolean isAuthorized,
+                            boolean isResponseMustBeNull,
+                            int status) {
+        final String endpoint = "/file?filename=" + filename;
+        final Name name = new Name(newFilename);
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (isAuthorized)
+            headers.add("auth-token", token);
+        final HttpEntity<Name> httpEntity = new HttpEntity<>(name, headers);
+        getResponseBody(HttpMethod.PUT, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class, status);
+    }
+
+    private void getList(int listSize,
+                         boolean isAuthorized,
+                         int status) {
+        final String endpoint = "/list?limit=" + listSize;
+        final HttpHeaders headers = new HttpHeaders();
+        if (isAuthorized)
+            headers.add("auth-token", token);
+        final HttpEntity<Name> httpEntity = new HttpEntity<>(null, headers);
+        if (status == HttpStatus.OK.value()) {
+            final ParameterizedTypeReference<List<FileSize>> ptr = new ParameterizedTypeReference<List<FileSize>>() {};
+            final List<FileSize> body =
+                    getResponseBody(HttpMethod.GET, endpoint, httpEntity, false, ptr, status);
+            Assertions.assertEquals(body.size(), listSize);
+            Assertions.assertTrue(body.toString().contains("size") &&
+                    body.toString().contains(TEST_NEW_FILENAME) &&
+                    !body.toString().contains(TEST_INIT_FILENAME));
+        } else
+            getResponseBody(HttpMethod.GET, endpoint, httpEntity, false, ErrorMessage.class, status);
+    }
+
+    void fileDelete(String filename,
+                    boolean isAuthorized,
+                    boolean isResponseMustBeNull,
+                    int status) {
+        final String endpoint = "/file?filename=" + filename;
+        final HttpHeaders headers = new HttpHeaders();
+        if (isAuthorized)
+            headers.add("auth-token", token);
         final HttpEntity<String> httpEntity = new HttpEntity<>(null, headers);
-        getResponseBody(HttpMethod.POST, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class);
-        cleanDatabase();
+        getResponseBody(HttpMethod.DELETE, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class, status);
+    }
+
+    private void logout(boolean isAuthorized,
+                        boolean isResponseMustBeNull,
+                        int status,
+                        boolean isFinalizedDatabase) {
+        final String endpoint = "/logout";
+        final HttpHeaders headers = new HttpHeaders();
+        if (isAuthorized)
+            headers.add("auth-token", token);
+        final HttpEntity<String> httpEntity = new HttpEntity<>(null, headers);
+        getResponseBody(HttpMethod.POST, endpoint, httpEntity, isResponseMustBeNull, ErrorMessage.class, status);
+        if (isFinalizedDatabase)
+            cleanDatabase();
     }
 
     void configureRequestFactory() {
@@ -181,11 +315,12 @@ class ApplicationTests {
                                   String endpoint,
                                   HttpEntity httpEntity,
                                   boolean isResponseMustBeNull,
-                                  Class responseClass) {
+                                  Class responseClass,
+                                  int status) {
         final String path = rootPath + endpoint;
         final ResponseEntity<T> forEntity =
                 restTemplate.exchange(path, httpMethod, httpEntity, responseClass);
-        test(httpMethod, path, httpEntity, isResponseMustBeNull, forEntity);
+        test(httpMethod, path, httpEntity, isResponseMustBeNull, forEntity, status);
         return forEntity.getBody();
     }
 
@@ -193,18 +328,21 @@ class ApplicationTests {
                                   String endpoint,
                                   HttpEntity httpEntity,
                                   boolean isResponseMustBeNull,
-                                  ParameterizedTypeReference ptr) {
+                                  ParameterizedTypeReference ptr,
+                                  int status) {
         final String path = rootPath + endpoint;
         final ResponseEntity<T> forEntity =
                 restTemplate.exchange(path, httpMethod, httpEntity, ptr);
-        test(httpMethod, path, httpEntity, isResponseMustBeNull, forEntity);
+        test(httpMethod, path, httpEntity, isResponseMustBeNull, forEntity, status);
         return forEntity.getBody();
     }
 
     private <T> void test(HttpMethod httpMethod,
                        String path,
                        HttpEntity httpEntity,
-                       boolean isResponseMustBeNull, ResponseEntity<T> forEntity) {
+                       boolean isResponseMustBeNull,
+                       ResponseEntity<T> forEntity,
+                       int status) {
         final T body = forEntity.getBody();
         final int statusCodeValue = forEntity.getStatusCodeValue();
         System.out.println(httpMethod + "-request to " + path);
@@ -216,6 +354,6 @@ class ApplicationTests {
         } else {
             Assertions.assertNotNull(body);
         }
-        Assertions.assertEquals(statusCodeValue, HttpStatus.OK.value());
+        Assertions.assertEquals(statusCodeValue, status);
     }
 }

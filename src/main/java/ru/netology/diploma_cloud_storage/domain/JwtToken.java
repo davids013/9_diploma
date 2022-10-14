@@ -16,7 +16,7 @@ import java.util.function.Function;
 @Component
 public class JwtToken implements Serializable {
     private static final long serialVersionUID = -2550185165626007488L;
-    public static final long JWT_TOKEN_VALIDITY = 10 * 60;
+    public static final long JWT_TOKEN_VALIDITY = 2 * 60 * 60;
 
     public static final String JWT_START_KEY = "Bearer ";
     @Value("${jwt.secret}")

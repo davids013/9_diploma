@@ -13,11 +13,6 @@ import javax.validation.Valid;
 @RestController
 @Validated
 @RequestMapping("/cloud/")
-@CrossOrigin
-//        (origins = "http://localhost:8080",
-//                methods = RequestMethod.POST,
-//                allowedHeaders = "content-type",
-//                allowCredentials = "true")
 public class AuthController {
 
     private final AuthService authService;
@@ -40,5 +35,6 @@ public class AuthController {
         final String answer = String.format("-----> POST   /logout \t-> Logging out by '%s'",
                 authToken.getAuthToken());
         System.out.println(answer);
+        authService.logout(authToken);
     }
 }

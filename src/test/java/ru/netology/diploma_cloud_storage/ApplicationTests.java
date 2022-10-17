@@ -11,19 +11,21 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import ru.netology.diploma_cloud_storage.db.entities.FileId;
+import ru.netology.diploma_cloud_storage.db.entities.UserEntity;
 import ru.netology.diploma_cloud_storage.domain.*;
 import ru.netology.diploma_cloud_storage.repository.CloudRepository;
 import ru.netology.diploma_cloud_storage.repository.UserRepository;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationTests {
 
+    static final String ROOT_ENTRYPOINT = "/cloud";
+    static final String DOCKER_IMAGE_NAME = "diploma:latest";
     static final String TEST_INIT_FILENAME = "filename.test";
     static final String TEST_NEW_FILENAME = "newName.test";
     static final String TEST_USERNAME = "test_username";
@@ -32,6 +34,7 @@ class ApplicationTests {
     static String token;
     static int counter;
     private long time;
+    private final Set<String> files = new HashSet<>();
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -40,13 +43,13 @@ class ApplicationTests {
     @Autowired
     private CloudRepository cloudRepository;
     public static GenericContainer<?> container =
-            new GenericContainer<>("diploma:latest").withExposedPorts(PORT);
+            new GenericContainer<>(DOCKER_IMAGE_NAME).withExposedPorts(PORT);
 
     @BeforeAll
     public static void init() {
         System.out.println("START CONTAINER");
         container.start();
-        rootPath = "http://localhost:" + container.getMappedPort(PORT) + "/cloud";
+        rootPath = "http://localhost:" + container.getMappedPort(PORT) + ROOT_ENTRYPOINT;
         System.out.println("CONTAINER STARTED");
     }
 
@@ -90,7 +93,7 @@ class ApplicationTests {
     @Test
     @Order(5)
     void getListTest() {
-        getList(3, true, HttpStatus.OK.value());
+        getList(1, true, HttpStatus.OK.value());
     }
 
     @Test
@@ -207,7 +210,9 @@ class ApplicationTests {
                             boolean isAuthorized,
                             boolean isResponseMustBeNull,
                             int status) {
-        final String endpoint = "/file?filename=" + TEST_INIT_FILENAME;
+        final String filename = TEST_INIT_FILENAME;
+        files.add(filename);
+        final String endpoint = "/file?filename=" + filename;
         final String fileHash = String.valueOf(Objects.hash(fileData));
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -240,6 +245,7 @@ class ApplicationTests {
                             boolean isAuthorized,
                             boolean isResponseMustBeNull,
                             int status) {
+        files.add(filename);
         final String endpoint = "/file?filename=" + filename;
         final Name name = new Name(newFilename);
         final HttpHeaders headers = new HttpHeaders();
@@ -303,12 +309,19 @@ class ApplicationTests {
     }
 
     void cleanDatabase() {
-        if (userRepository.existsByLogin(TEST_USERNAME))
+        cloudRepository.flush();
+        userRepository.flush();
+        if (userRepository.existsByLogin(TEST_USERNAME)) {
+            final UserEntity user = userRepository.findByLogin(TEST_USERNAME);
+            for (String filename : files) {
+                final FileId fileId = new FileId(user, filename);
+                if (cloudRepository.existsById(fileId))
+                    cloudRepository.deleteById(fileId);
+            }
+            System.out.println("TRY TO DELETE USER");
             userRepository.deleteById(TEST_USERNAME);
-        if (cloudRepository.existsById(TEST_INIT_FILENAME))
-            cloudRepository.deleteById(TEST_INIT_FILENAME);
-        if (cloudRepository.existsById(TEST_NEW_FILENAME))
-            cloudRepository.deleteById(TEST_NEW_FILENAME);
+            System.out.println("USER DELETED");
+        }
     }
 
     private <T> T getResponseBody(HttpMethod httpMethod,

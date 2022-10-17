@@ -49,6 +49,14 @@ public class AuthService implements UserDetailsService {
         return new AuthToken(token);
     }
 
+    public void logout(AuthToken authToken) {
+        final String token = authToken.getAuthToken();
+        final String login = jwtToken.getUsernameFromToken(token);
+        if (!userRepository.existsByLogin(login))
+            throw new UnauthorizedErrorException("user",
+                "user with login '" + login + "' doesn't exist");
+    }
+
     private void authenticate(String login, String password) {
         try {
             authManager.authenticate(new UsernamePasswordAuthenticationToken(login, password));

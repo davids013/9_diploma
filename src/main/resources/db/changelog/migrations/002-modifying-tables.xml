@@ -5,18 +5,21 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
     <changeSet  author="vshvedko"  id="002-1">
         <insert tableName="file_storage">
+            <column name="owner_login">master</column>
             <column name="filename">myfile1.txt</column>
             <column name="hash">hash-myfile1.txt</column>
             <column name="created">now()</column>
             <column name="file">00000001</column>
         </insert>
         <insert tableName="file_storage">
+            <column name="owner_login">master</column>
             <column name="filename">myfile2.csv</column>
             <column name="hash">hash-myfile2.csv</column>
             <column name="created">now()</column>
             <column name="file">0000001011001001</column>
         </insert>
         <insert tableName="file_storage">
+            <column name="owner_login">master</column>
             <column name="filename">myfile3.md</column>
             <column name="hash">hash-myfile3.md</column>
             <column name="created">now()</column>

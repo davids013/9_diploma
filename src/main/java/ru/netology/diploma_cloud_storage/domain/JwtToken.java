@@ -23,6 +23,8 @@ public class JwtToken implements Serializable {
     private String secret;
 
     public String getUsernameFromToken(String token) {
+        if (token.startsWith(JWT_START_KEY))
+            token = token.substring(JWT_START_KEY.length());
         return getClaimFromToken(token, Claims::getSubject);
     }
 

@@ -6,6 +6,7 @@ import ru.netology.diploma_cloud_storage.domain.User;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -29,6 +30,13 @@ public class UserEntity {
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private Date registered;
+
+//    @OneToMany(mappedBy = "id",
+//            fetch = FetchType.LAZY,
+//            cascade = CascadeType.ALL,
+//            orphanRemoval = true)
+//    @ToString.Exclude
+//    private List<FileEntity> files;
 
     public UserEntity (String login, String password) {
         this.login = login;

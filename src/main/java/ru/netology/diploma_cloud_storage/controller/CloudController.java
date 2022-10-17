@@ -21,11 +21,6 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/cloud/")
-@CrossOrigin
-//        (origins = "http://localhost:8080",
-//                methods = RequestMethod.POST,
-//                allowedHeaders = "content-type",
-//                allowCredentials = "true")
 public class CloudController {
     private final CloudService service;
 
@@ -42,7 +37,7 @@ public class CloudController {
                            @RequestPart @Valid @Pattern(regexp = "[01\\s]+") String file) {
         final String answer = String.format("-----> POST   /file \t-> Adding file '%s' by '%s'", filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
-        service.uploadFile(filename.getFilename(), hash, file);
+        service.uploadFile(filename.getFilename(), hash, file, authToken);
     }
 
     @DeleteMapping("file")
@@ -52,7 +47,7 @@ public class CloudController {
         final String answer = String.format("-----> DELETE /file \t-> Deleting file '%s' by '%s'",
                 filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
-        service.deleteFile(filename.getFilename());
+        service.deleteFile(filename.getFilename(), authToken);
     }
 
     @GetMapping(value = "file", produces = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -63,7 +58,7 @@ public class CloudController {
         final String answer = String.format("-----> GET    /file \t-> Getting file '%s' by '%s'",
                 filename.getFilename(), authToken.getAuthToken());
         System.out.println(answer);
-        return service.downloadFile(filename.getFilename());
+        return service.downloadFile(filename.getFilename(), authToken);
     }
 
     @PutMapping(value = "file", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -74,7 +69,7 @@ public class CloudController {
         final String answer = String.format("-----> PUT    /file \t-> Renaming file '%s' to '%s' by '%s'",
                 filename.getFilename(), name.getName(), authToken.getAuthToken());
         System.out.println(answer);
-        service.renameFile(filename.getFilename(), name.getName());
+        service.renameFile(filename.getFilename(), name.getName(), authToken);
     }
 
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -84,6 +79,6 @@ public class CloudController {
         final String answer = String.format("-----> GET    /list \t-> Getting %d file list by '%s'",
                 limit, authToken.getAuthToken());
         System.out.println(answer);
-        return service.getFileList(limit);
+        return service.getFileList(limit, authToken);
     }
 }

@@ -20,12 +20,9 @@ public class FileEntity {
 
     @Transient
     public static final String FILE_BYTES_SEPARATOR = " ";
-    @Transient
-    public static final String DB_NAME = "file_storage";
 
-    @Id
-    @Column(length = 64, nullable = false, unique = true)
-    private String filename;
+    @EmbeddedId
+    private FileId id;
     @Column(nullable = false)
     private String hash;
     @Column(nullable = false)
@@ -38,14 +35,14 @@ public class FileEntity {
     @UpdateTimestamp
     private Date updated;
 
-    public FileEntity(String filename, String hash, String file) {
-        this.filename = filename;
+    public FileEntity(FileId id, String hash, String file) {
+        this.id = id;
         this.hash = hash;
         this.file = file;
     }
 
     public FileEntity(FileEntity another) {
-        this.filename = another.getFilename();
+        this.id = another.getId();
         this.hash = another.getHash();
         this.file = another.getFile();
         this.created = another.getCreated();
@@ -57,7 +54,7 @@ public class FileEntity {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
         FileEntity that = (FileEntity) o;
-        return Objects.equals(filename, that.filename);
+        return Objects.equals(id, that.getId());
     }
 
     @Override

@@ -8,14 +8,15 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.netology.diploma_cloud_storage.db.entities.FileEntity;
+import ru.netology.diploma_cloud_storage.db.entities.FileId;
 
 @Repository
-public interface CloudRepository extends JpaRepository<FileEntity, String> {
+public interface CloudRepository extends JpaRepository<FileEntity, FileId> {
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRED)
     @Query("UPDATE FileEntity f " +
-            "SET f.filename = :new_name, f.updated = current_timestamp " +
-            "WHERE f.filename = :old_name")
-    void renameFile(@Param("old_name") String oldFilename, @Param("new_name") String newFilename);
+            "SET f.id = :new_id, f.updated = current_timestamp " +
+            "WHERE f.id = :old_id")
+    void renameFile(@Param("old_id") FileId oldFileId, @Param("new_id") FileId newFileId);
 }

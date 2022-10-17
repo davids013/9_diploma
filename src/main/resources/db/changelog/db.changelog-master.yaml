@@ -2,6 +2,6 @@ databaseChangeLog:
   - include:
       file: migrations/001-creating-tables.xml
       relativeToChangelogFile: true
-  - include:
-      file: migrations/002-modifying-tables.xml
-      relativeToChangelogFile:  true
+#  - include:
+#      file: migrations/002-modifying-tables.xml
+#      relativeToChangelogFile:  true

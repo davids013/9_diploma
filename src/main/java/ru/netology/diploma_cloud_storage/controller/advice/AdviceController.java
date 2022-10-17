@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.netology.diploma_cloud_storage.domain.ErrorMessage;
 import ru.netology.diploma_cloud_storage.exception.*;
 
@@ -68,7 +69,6 @@ public class AdviceController implements AuthenticationEntryPoint {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorMessage methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
         final int id = -6;
-        e.printStackTrace();
         final String target = "default message";
         String mes = e.getMessage();
         mes = (!mes.contains(target))
@@ -77,6 +77,14 @@ public class AdviceController implements AuthenticationEntryPoint {
                     .substring(mes.lastIndexOf(target) + target.length() + 2, mes.length() - 3)
                     .replace("\"", "'");
         return buildErrorMessage(new ErrorInputDataException("input", "filename " + mes), id);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage methodArgumentTypeMismatchExceptionHandler(MethodArgumentTypeMismatchException e) {
+        final int id = -7;
+        final String message = e.getMessage().substring(0, e.getMessage().indexOf(";"));
+        return buildErrorMessage(new ErrorInputDataException("input", message), id);
     }
 
     private ErrorMessage buildErrorMessage(CloudStorageException e, int id) {

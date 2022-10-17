@@ -59,7 +59,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout()
-//                    .logoutUrl("/cloud/logout")
-                    .logoutSuccessUrl("/cloud/login");
+//                .logoutUrl("/logout")
+                .logoutSuccessUrl("/cloud/login");
     }
 }

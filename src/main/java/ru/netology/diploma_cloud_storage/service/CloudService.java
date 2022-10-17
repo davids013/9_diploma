@@ -7,12 +7,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import ru.netology.diploma_cloud_storage.db.entities.FileEntity;
+import ru.netology.diploma_cloud_storage.db.entities.FileId;
+import ru.netology.diploma_cloud_storage.db.entities.UserEntity;
+import ru.netology.diploma_cloud_storage.domain.AuthToken;
 import ru.netology.diploma_cloud_storage.domain.CloudFile;
 import ru.netology.diploma_cloud_storage.domain.FileSize;
+import ru.netology.diploma_cloud_storage.domain.JwtToken;
 import ru.netology.diploma_cloud_storage.exception.ErrorDeleteFileException;
 import ru.netology.diploma_cloud_storage.exception.ErrorGettingListException;
 import ru.netology.diploma_cloud_storage.exception.ErrorInputDataException;
+import ru.netology.diploma_cloud_storage.exception.UnauthorizedErrorException;
 import ru.netology.diploma_cloud_storage.repository.CloudRepository;
+import ru.netology.diploma_cloud_storage.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,29 +26,31 @@ import java.util.stream.Collectors;
 @Service
 public class CloudService {
     private final CloudRepository repository;
+    private final UserRepository userRepository;
+    private final JwtToken jwt;
 
     @Autowired
-    public CloudService(CloudRepository repository) {
+    public CloudService(CloudRepository repository,
+                        UserRepository userRepository,
+                        JwtToken jwt) {
         this.repository = repository;
+        this.userRepository = userRepository;
+        this.jwt = jwt;
     }
 
-    public void deleteFile(String filename) {
-        if (repository.existsById(filename)) {
-            repository.deleteById(filename);
-        } else throw new ErrorDeleteFileException(filename);
-    }
-
-    public void uploadFile(String filename, String hash, String binaryFile) {
-        if (!repository.existsById(filename)) {
-            final FileEntity entity = new FileEntity(filename, hash, binaryFile);
+    public void uploadFile(String filename, String hash, String binaryFile, AuthToken authToken) {
+        final FileId fileId = getFileIdFromFilenameAndToken(filename, authToken);
+        if (!repository.existsById(fileId)) {
+            final FileEntity entity = new FileEntity(fileId, hash, binaryFile);
             repository.save(entity);
         } else
             throw new ErrorInputDataException(filename, "file with such filename is already exist");
     }
 
-    public MultiValueMap<String, String> downloadFile(String filename) {
-        if (repository.existsById(filename)) {
-            final FileEntity entity = repository.getById(filename);
+    public MultiValueMap<String, String> downloadFile(String filename, AuthToken authToken) {
+        final FileId fileId = getFileIdFromFilenameAndToken(filename, authToken);
+        if (repository.existsById(fileId)) {
+            final FileEntity entity = repository.getById(fileId);
             final CloudFile cf = new CloudFile(entity.getHash(), entity.getFile());
             final MultiValueMap<String, String> mvm = new LinkedMultiValueMap<>();
             mvm.add("hash", cf.getHash());
@@ -52,31 +60,61 @@ public class CloudService {
             throw new ErrorInputDataException(filename, "file with such filename is not exist");
     }
 
-    public void renameFile(String oldFilename, String newFilename) {
+    public void renameFile(String oldFilename, String newFilename, AuthToken authToken) {
+        final FileId oldFileId = getFileIdFromFilenameAndToken(oldFilename, authToken);
+        final FileId newFileId = new FileId(oldFileId.getOwner(), newFilename);
         if (!oldFilename.equals(newFilename)
-                && repository.existsById(oldFilename)
-                && !repository.existsById(newFilename)) {
-            repository.renameFile(oldFilename, newFilename);
+                && repository.existsById(oldFileId)
+                && !repository.existsById(newFileId)) {
+            repository.renameFile(oldFileId, newFileId);
         } else if (oldFilename.equals(newFilename)) {
             throw new ErrorInputDataException(oldFilename, "input filenames are equal");
-        } else if (!repository.existsById(oldFilename)) {
+        } else if (!repository.existsById(oldFileId)) {
             throw new ErrorInputDataException(oldFilename, "file with such filename is not exist");
         } else
             throw new ErrorInputDataException(oldFilename, "file '" + newFilename + "' is already exist");
     }
 
-    public List<FileSize> getFileList(int limit) {
-        final long storageSize = repository.count();
+    public List<FileSize> getFileList(int limit, AuthToken authToken) {
+        final UserEntity owner = getUserFromToken(authToken);
+        final long storageSize = repository
+                .findAll()
+                .parallelStream()
+                .filter(x -> x.getId().getOwner().equals(owner))
+                .count();
         if (storageSize >= limit) {
             final Sort sort = Sort.by(Sort.Direction.DESC, "created");
             return repository.findAll(PageRequest.of(0, limit, sort))
                     .stream()
+                    .parallel()
+                    .filter(x -> x.getId().getOwner().equals(owner))
                     .map(x -> new FileSize(
-                            x.getFilename(),
-                            x.getFile().replace(" ", "").length() / 8))
+                            x.getId().getFilename(),
+                            x.getFile().replace(FileEntity.FILE_BYTES_SEPARATOR, "").length() / 8))
                     .collect(Collectors.toList());
         } else throw new ErrorGettingListException("fileList",
-                "can't get " + limit + " files from storage (max " + storageSize + ")");
+                "can't get " + limit + " files from storage with size " + storageSize);
+    }
+
+    public void deleteFile(String filename, AuthToken authToken) {
+        final FileId fileId = getFileIdFromFilenameAndToken(filename, authToken);
+        if (repository.existsById(fileId)) {
+            repository.deleteById(fileId);
+        } else throw new ErrorDeleteFileException(filename);
+    }
+
+    private UserEntity getUserFromToken(AuthToken authToken) {
+        final String token = authToken.getAuthToken();
+        final String login = jwt.getUsernameFromToken(token);
+        if (userRepository.existsByLogin(login)) {
+            return userRepository.findByLogin(login);
+        } else throw new UnauthorizedErrorException("user",
+                "user with login '" + login + "' doesn't exist");
+    }
+
+    private FileId getFileIdFromFilenameAndToken(String filename, AuthToken authToken) {
+        final UserEntity owner = getUserFromToken(authToken);
+        return new FileId(owner, filename);
     }
 
 //    private String byteArrayToBinaryString(byte[] input) {

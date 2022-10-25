@@ -12,7 +12,7 @@ import javax.validation.Valid;
 
 @RestController
 @Validated
-@RequestMapping("/cloud/")
+@RequestMapping("/")
 public class AuthController {
 
     private final AuthService authService;

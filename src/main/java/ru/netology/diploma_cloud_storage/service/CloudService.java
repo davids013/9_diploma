@@ -20,6 +20,7 @@ import ru.netology.diploma_cloud_storage.exception.UnauthorizedErrorException;
 import ru.netology.diploma_cloud_storage.repository.CloudRepository;
 import ru.netology.diploma_cloud_storage.repository.UserRepository;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,20 +78,16 @@ public class CloudService {
 
     public List<FileSize> getFileList(int limit, AuthToken authToken) {
         final UserEntity owner = getUserFromToken(authToken);
-        final long storageSize = repository
-                .findAll()
-                .parallelStream()
-                .filter(x -> x.getId().getOwner().equals(owner))
-                .count();
+        final List<FileEntity> files = owner.getFiles();
+        final int storageSize = files.size();
         if (storageSize >= limit) {
-            final Sort sort = Sort.by(Sort.Direction.DESC, "created");
-            return repository.findAll(PageRequest.of(0, limit, sort))
-                    .stream()
-                    .parallel()
-                    .filter(x -> x.getId().getOwner().equals(owner))
+            return files
+                    .parallelStream()
+                    .sorted(Comparator.comparing(FileEntity :: getCreated).reversed())
                     .map(x -> new FileSize(
                             x.getId().getFilename(),
                             x.getFile().replace(FileEntity.FILE_BYTES_SEPARATOR, "").length() / 8))
+                    .limit(limit)
                     .collect(Collectors.toList());
         } else throw new ErrorGettingListException("fileList",
                 "can't get " + limit + " files from storage with size " + storageSize);

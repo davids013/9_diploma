@@ -20,7 +20,7 @@ import java.util.List;
 
 @RestController
 @Validated
-@RequestMapping("/cloud/")
+@RequestMapping("/")
 public class CloudController {
     private final CloudService service;
 

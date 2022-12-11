@@ -24,7 +24,7 @@ import java.util.*;
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationTests {
 
-    static final String ROOT_ENTRYPOINT = "/cloud";
+    static final String ROOT_ENTRYPOINT = "";
     static final String DOCKER_IMAGE_NAME = "diploma:latest";
     static final String TEST_INIT_FILENAME = "filename.test";
     static final String TEST_NEW_FILENAME = "newName.test";

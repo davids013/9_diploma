@@ -31,12 +31,12 @@ public class UserEntity {
     @CreationTimestamp
     private Date registered;
 
-//    @OneToMany(mappedBy = "id",
-//            fetch = FetchType.LAZY,
-//            cascade = CascadeType.ALL,
-//            orphanRemoval = true)
-//    @ToString.Exclude
-//    private List<FileEntity> files;
+    @OneToMany(mappedBy = "id.owner",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @ToString.Exclude
+    private List<FileEntity> files;
 
     public UserEntity (String login, String password) {
         this.login = login;
